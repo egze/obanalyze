@@ -34,7 +34,7 @@ defmodule Obanalyze.MixProject do
 
   defp deps do
     [
-      {:ex_doc, "~> 0.21", only: :docs},
+      {:ex_doc, ">= 0.0.0", only: :dev, runtime: false},
       {:phoenix_live_dashboard, "~> 0.7"},
       {:floki, ">= 0.30.0", only: :test},
       {:ecto_sqlite3, ">= 0.0.0", only: :test},
