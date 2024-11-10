@@ -33,3 +33,9 @@ live_dashboard "/dashboard",
 Go to your `Phoenix.LiveDashboard` and you should see the `Obanalyze` tab.
 
 ![Obanalyze screenshot](images/obanalyze.png "Obanalyze")
+
+
+# Alternatives
+
+* [evilmarty/oban_live_dashboard](https://github.com/evilmarty/oban_live_dashboard) where I took my inspiration from.
+ You should check it out if you want a simple way to observe your Oban jobs.
