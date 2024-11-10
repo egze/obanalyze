@@ -7,7 +7,7 @@ defmodule Obanalyze.MixProject do
   def project do
     [
       app: :obanalyze,
-      version: "0.1.1",
+      version: @version,
       elixir: "~> 1.12",
       start_permanent: Mix.env() == :prod,
       deps: deps(),
