@@ -32,7 +32,7 @@ live_dashboard "/dashboard",
 
 Go to your `Phoenix.LiveDashboard` and you should see the `Obanalyze` tab.
 
-![Obanalyze screenshot](images/obanalyze.png "Obanalyze")
+![Obanalyze screenshot](doc/images/obanalyze.png "Obanalyze")
 
 
 # Alternatives

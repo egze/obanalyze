@@ -3,6 +3,7 @@ defmodule Obanalyze do
   @moduledoc File.read!(Path.expand("./README.md"))
              |> String.split("<!-- MDOC !-->")
              |> Enum.fetch!(1)
+             |> String.replace("doc/images", "images")
 
   @doc """
   Returns the module for the Obanalyze Phoenix.LiveDashboard page.
