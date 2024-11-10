@@ -1,0 +1,53 @@
+defmodule Obanalyze.MixProject do
+  use Mix.Project
+
+  @version "1.0.0"
+  @source_url "https://github.com/egze/obanalyze"
+
+  def project do
+    [
+      app: :obanalyze,
+      version: "0.1.1",
+      elixir: "~> 1.12",
+      start_permanent: Mix.env() == :prod,
+      deps: deps(),
+      package: package(),
+      name: "Obanalyze",
+      docs: docs(),
+      description: "Real-time Monitoring for Oban with Phoenix.LiveDashboard",
+      source_url: @source_url
+    ]
+  end
+
+  def application do
+    []
+  end
+
+  defp docs do
+    [
+      main: "Obanalyze",
+      source_ref: "v#{@version}",
+      source_url: @source_url,
+      nest_modules_by_prefix: [Obanalyze]
+    ]
+  end
+
+  defp deps do
+    [
+      {:ex_doc, "~> 0.21", only: :docs},
+      {:phoenix_live_dashboard, "~> 0.7"},
+      {:floki, ">= 0.30.0", only: :test},
+      {:ecto_sqlite3, ">= 0.0.0", only: :test},
+      {:oban, "~> 2.15"}
+    ]
+  end
+
+  defp package do
+    [
+      maintainers: ["Aleksandr Lossenko"],
+      licenses: ["MIT"],
+      links: %{github: "https://github.com/egze/obanalyze"},
+      files: ~w(lib CHANGELOG.md LICENSE.md mix.exs README.md)
+    ]
+  end
+end
