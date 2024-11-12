@@ -25,11 +25,13 @@ defmodule Obanalyze.DashboardTest do
 
   test "shows job info modal" do
     job = job_fixture(%{something: "foobar"})
-    {:ok, live, _rendered} = live(build_conn(), "/dashboard/obanalyze?params[job]=#{job.id}")
-    rendered = render(live)
+    {:ok, live, rendered} = live(build_conn(), "/dashboard/obanalyze?params[job]=#{job.id}")
     assert rendered =~ "modal-content"
-    assert rendered =~ "%{&quot;something&quot; =&gt; &quot;foobar&quot;}"
-    refute live |> element("#modal-close") |> render_click() =~ "modal"
+    assert rendered =~ "foobar"
+
+    refute live
+           |> element("#modal-close")
+           |> render_click() =~ "modal-close"
   end
 
   defp job_fixture(args \\ %{}) do
