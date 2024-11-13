@@ -20,7 +20,7 @@ end
 
 _ = Ecto.Adapters.SQLite3.storage_up(Obanalyze.DashboardTest.Repo.config())
 
-defmodule Obanalyze.ErrorView do
+defmodule Obanalyze.DashboardTest.ErrorView do
   def render(template, _assigns) do
     Phoenix.Controller.status_message_from_template(template)
   end
