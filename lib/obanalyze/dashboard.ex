@@ -4,21 +4,10 @@ defmodule Obanalyze.Dashboard do
   use Phoenix.LiveDashboard.PageBuilder, refresher?: true
 
   import Phoenix.LiveDashboard.Helpers, only: [format_value: 2]
-  import Ecto.Query, only: [group_by: 3, order_by: 2, order_by: 3, select: 3, limit: 2, where: 3]
 
-  alias Obanalyze.NavItem
+  alias Obanalyze.ObanJobs
 
   @per_page_limits [20, 50, 100]
-
-  @oban_sorted_job_states [
-    "executing",
-    "available",
-    "scheduled",
-    "retryable",
-    "cancelled",
-    "discarded",
-    "completed"
-  ]
 
   @impl true
   def render(assigns) do
@@ -35,7 +24,7 @@ defmodule Obanalyze.Dashboard do
 
     <.live_nav_bar id="oban_states" page={@page} nav_param="job_state" style={:bar} extra_params={["nav"]}>
       <:item :for={nav_item <- @nav_items} name={nav_item.name} label={nav_item.label} method="navigate">
-        <.live_table id="oban_jobs" limit={per_page_limits()} dom_id={"oban-jobs-#{nav_item.name}"} page={@page} row_attrs={&row_attrs/1} row_fetcher={&fetch_jobs(&1, &2, nav_item.name)} default_sort_by={@default_sort_by} title="" search={false}>
+        <.live_table id="oban_jobs" limit={per_page_limits()} dom_id={"oban-jobs-#{nav_item.name}"} page={@page} row_attrs={&row_attrs/1} row_fetcher={&row_fetcher(&1, &2, nav_item.name)} default_sort_by={@default_sort_by} title="" search={false}>
           <:col :let={job} field={:worker} sortable={:desc}>
             <p class="font-weight-bold"><%= job.worker %></p>
             <pre class="font-weight-lighter text-muted"><%= truncate(inspect(job.args)) %></pre>
@@ -107,7 +96,7 @@ defmodule Obanalyze.Dashboard do
       socket
       |> assign_nav_items()
       |> update(:job, fn
-        %Oban.Job{id: job_id} -> get_job(job_id)
+        %Oban.Job{id: job_id} -> ObanJobs.get_oban_job(job_id)
         _ -> nil
       end)
 
@@ -116,11 +105,11 @@ defmodule Obanalyze.Dashboard do
 
   defp assign_job(socket, job_id) do
     if job_id do
-      case fetch_job(job_id) do
-        {:ok, job} ->
+      case ObanJobs.get_oban_job(job_id) do
+        %Oban.Job{} = job ->
           assign(socket, job: job)
 
-        :error ->
+        _ ->
           to = live_dashboard_path(socket, socket.assigns.page, params: %{})
           push_patch(socket, to: to)
       end
@@ -130,61 +119,17 @@ defmodule Obanalyze.Dashboard do
   end
 
   defp assign_nav_items(socket) do
-    job_state_counts = job_state_counts()
-
-    nav_items =
-      for job_state <- @oban_sorted_job_states,
-          count = Map.get(job_state_counts, job_state, 0),
-          timestamp_field = timestamp_field_for_job_state(job_state),
-          do: NavItem.new(job_state, count, timestamp_field)
-
-    assign(socket, nav_items: nav_items)
+    assign(socket, nav_items: Obanalyze.get_nav_items())
   end
 
-  defp job_state_counts do
-    Oban.Repo.all(
-      Oban.config(),
-      Oban.Job
-      |> group_by([j], [j.state])
-      |> order_by([j], [j.state])
-      |> select([j], {j.state, count(j.id)})
-    )
-    |> Enum.into(%{})
+  defp assign_default_sort_by(socket, job_state) do
+    timestamp_field = ObanJobs.timestamp_field_for_job_state(job_state)
+
+    assign(socket, :default_sort_by, timestamp_field)
   end
 
-  defp fetch_jobs(params, _node, job_state) do
-    total_jobs = Oban.Repo.aggregate(Oban.config(), jobs_count_query(job_state), :count)
-
-    jobs =
-      Oban.Repo.all(Oban.config(), jobs_query(params, job_state)) |> Enum.map(&Map.from_struct/1)
-
-    {jobs, total_jobs}
-  end
-
-  defp get_job(id) do
-    Oban.Repo.get(Oban.config(), Oban.Job, id)
-  end
-
-  defp fetch_job(id) do
-    case get_job(id) do
-      %Oban.Job{} = job ->
-        {:ok, job}
-
-      _ ->
-        :error
-    end
-  end
-
-  defp jobs_query(%{sort_by: sort_by, sort_dir: sort_dir, limit: limit}, job_state) do
-    Oban.Job
-    |> limit(^limit)
-    |> where([job], job.state == ^job_state)
-    |> order_by({^sort_dir, ^sort_by})
-  end
-
-  defp jobs_count_query(job_state) do
-    Oban.Job
-    |> where([job], job.state == ^job_state)
+  defp row_fetcher(params, _node, job_state) do
+    ObanJobs.list_jobs_with_total(params, job_state)
   end
 
   defp row_attrs(job) do
@@ -207,26 +152,6 @@ defmodule Obanalyze.Dashboard do
 
   defp timestamp(job, timestamp_field) do
     Map.get(job, timestamp_field)
-  end
-
-  defp assign_default_sort_by(socket, job_state) do
-    timestamp_field = timestamp_field_for_job_state(job_state)
-
-    assign(socket, :default_sort_by, timestamp_field)
-  end
-
-  defp timestamp_field_for_job_state(job_state) do
-    case job_state do
-      "available" -> :scheduled_at
-      "cancelled" -> :cancelled_at
-      "completed" -> :completed_at
-      "discarded" -> :discarded_at
-      "executing" -> :attempted_at
-      "retryable" -> :scheduled_at
-      "scheduled" -> :scheduled_at
-      # because "executing" state is default
-      _ -> :attempted_at
-    end
   end
 
   defp truncate(string, max_length \\ 50) do
