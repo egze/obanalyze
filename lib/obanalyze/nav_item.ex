@@ -4,7 +4,7 @@ defmodule Obanalyze.NavItem do
   def new(state, count, timestamp_field) do
     %__MODULE__{
       name: state,
-      label: "#{state} (#{count})",
+      label: "#{Phoenix.Naming.humanize(state)} (#{count})",
       timestamp_field: timestamp_field
     }
   end
