@@ -16,7 +16,7 @@ defmodule Obanalyze.DashboardTest do
   end
 
   test "shows jobs with limit" do
-    for _ <- 1..110, do: job_fixture(%{}, state: "executing")
+    for _ <- 1..110, do: job_fixture(%{}, state: "executing", attempted_at: DateTime.utc_now())
     {:ok, live, rendered} = live(build_conn(), "/dashboard/obanalyze")
 
     assert rendered |> :binary.matches("<td class=\"oban-jobs-executing-worker\"") |> length() ==
@@ -29,7 +29,9 @@ defmodule Obanalyze.DashboardTest do
   end
 
   test "shows job info modal" do
-    job = job_fixture(%{something: "foobar"}, state: "executing")
+    job =
+      job_fixture(%{something: "foobar"}, state: "executing", attempted_at: DateTime.utc_now())
+
     {:ok, live, rendered} = live(build_conn(), "/dashboard/obanalyze?params[job]=#{job.id}")
     assert rendered =~ "modal-content"
     assert rendered =~ "foobar"
@@ -40,8 +42,11 @@ defmodule Obanalyze.DashboardTest do
   end
 
   test "switch between states" do
-    _executing_job = job_fixture(%{"foo" => "executing"}, state: "executing")
-    _completed_job = job_fixture(%{"foo" => "completed"}, state: "completed")
+    _executing_job =
+      job_fixture(%{"foo" => "executing"}, state: "executing", attempted_at: DateTime.utc_now())
+
+    _completed_job =
+      job_fixture(%{"foo" => "completed"}, state: "completed", completed_at: DateTime.utc_now())
 
     conn = build_conn()
     {:ok, live, rendered} = live(conn, "/dashboard/obanalyze")
