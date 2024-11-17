@@ -6,6 +6,7 @@ defmodule Obanalyze.Dashboard do
   import Phoenix.LiveDashboard.Helpers, only: [format_value: 2]
 
   alias Obanalyze.ObanJobs
+  alias Obanalyze.NavItem
 
   @per_page_limits [20, 50, 100]
 
@@ -25,6 +26,7 @@ defmodule Obanalyze.Dashboard do
     <.live_nav_bar id="oban_states" page={@page} nav_param="job_state" style={:bar} extra_params={["nav"]}>
       <:item :for={nav_item <- @nav_items} name={nav_item.name} label={nav_item.label} method="navigate">
         <.live_table id="oban_jobs" limit={per_page_limits()} dom_id={"oban-jobs-#{nav_item.name}"} page={@page} row_attrs={&row_attrs/1} row_fetcher={&row_fetcher(&1, &2, nav_item.name)} default_sort_by={@default_sort_by} title="" search={false}>
+          <:col field={:id} sortable={:desc} />
           <:col :let={job} field={:worker} sortable={:desc}>
             <p class="font-weight-bold"><%= job.worker %></p>
             <pre class="font-weight-lighter text-muted"><%= truncate(inspect(job.args)) %></pre>
@@ -33,8 +35,8 @@ defmodule Obanalyze.Dashboard do
             <%= job.attempt %>/<%= job.max_attempts %>
           </:col>
           <:col field={:queue} header="Queue" sortable={:desc} />
-          <:col :let={job} field={nav_item.timestamp_field} sortable={:desc}>
-            <%= format_value(timestamp(job, nav_item.timestamp_field)) %>
+          <:col :let={job} field={nav_item.timestamp_field} sortable={nav_item.default_timestamp_field_sort}>
+            <span id={"job-ts-#{job.id}"} phx-update="ignore" data-timestamp={DateTime.to_unix(timestamp(job, nav_item.timestamp_field))} phx-hook="Relativize" title={format_value(timestamp(job, nav_item.timestamp_field))}><%= format_value(timestamp(job, nav_item.timestamp_field)) %></span>
           </:col>
         </.live_table>
       </:item>
@@ -119,7 +121,7 @@ defmodule Obanalyze.Dashboard do
   end
 
   defp assign_nav_items(socket) do
-    assign(socket, nav_items: Obanalyze.get_nav_items())
+    assign(socket, nav_items: get_nav_items())
   end
 
   defp assign_default_sort_by(socket, job_state) do
@@ -163,4 +165,16 @@ defmodule Obanalyze.Dashboard do
   end
 
   defp per_page_limits, do: @per_page_limits
+
+  @doc """
+  Returns the nav items to render the menu.
+  """
+  def get_nav_items do
+    job_states_with_count = ObanJobs.job_states_with_count()
+
+    for job_state <- ObanJobs.sorted_job_states(),
+        count = Map.get(job_states_with_count, job_state, 0),
+        timestamp_field = ObanJobs.timestamp_field_for_job_state(job_state),
+        do: NavItem.new(job_state, count, timestamp_field)
+  end
 end

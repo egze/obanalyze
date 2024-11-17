@@ -49,4 +49,16 @@ defmodule Obanalyze.ObanJobs do
       _ -> default
     end
   end
+
+  def sorted_job_states do
+    [
+      "executing",
+      "available",
+      "scheduled",
+      "retryable",
+      "cancelled",
+      "discarded",
+      "completed"
+    ]
+  end
 end
