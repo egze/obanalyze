@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## v1.1.1
+
+* Update docs to mention `on_mount` hooks.
+
 ## v1.1.0
 
 * Bump `phoenix_live_dashboard` to `>= 0.8.5`.
