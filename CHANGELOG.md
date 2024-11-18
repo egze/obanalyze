@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## v1.3.0
+
+* Add search.
+
 ## v1.2.0
 
 * Ability to retry, cancel, delete jobs from the modal.
