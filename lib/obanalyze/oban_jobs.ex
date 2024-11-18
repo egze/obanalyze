@@ -44,11 +44,22 @@ defmodule Obanalyze.ObanJobs do
     {jobs, total_jobs}
   end
 
-  defp jobs_query(%{sort_by: sort_by, sort_dir: sort_dir, limit: limit}, job_state) do
+  defp jobs_query(%{sort_by: sort_by, sort_dir: sort_dir, limit: limit} = params, job_state) do
     Oban.Job
     |> limit(^limit)
     |> where([job], job.state == ^job_state)
     |> order_by({^sort_dir, ^sort_by})
+    |> filter(params[:search])
+  end
+
+  defp filter(query, nil), do: query
+
+  defp filter(query, term) do
+    like = "%#{term}%"
+
+    from oj in query,
+      where: like(oj.worker, ^like),
+      or_where: like(oj.args, ^like)
   end
 
   defp jobs_count_query(job_state) do

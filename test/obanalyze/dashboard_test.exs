@@ -111,6 +111,42 @@ defmodule Obanalyze.DashboardTest do
     assert_patched(live, "/dashboard/obanalyze?")
   end
 
+  test "search" do
+    _json_job =
+      job_fixture(%{foo: "json"},
+        state: "executing",
+        worker: "JsonWorker",
+        attempted_at: DateTime.utc_now()
+      )
+
+    _yaml_job =
+      job_fixture(%{foo: "yaml"},
+        state: "executing",
+        worker: "YamlWorker",
+        attempted_at: DateTime.utc_now()
+      )
+
+    {:ok, _live, rendered} = live(build_conn(), "/dashboard/obanalyze?search=JsonWorker")
+
+    assert rendered |> :binary.matches("<td class=\"oban-jobs-executing-worker\"") |> length() ==
+             1
+
+    {:ok, _live, rendered} = live(build_conn(), "/dashboard/obanalyze?search=YamlWorker")
+
+    assert rendered |> :binary.matches("<td class=\"oban-jobs-executing-worker\"") |> length() ==
+             1
+
+    {:ok, _live, rendered} = live(build_conn(), "/dashboard/obanalyze?search=foo")
+
+    assert rendered |> :binary.matches("<td class=\"oban-jobs-executing-worker\"") |> length() ==
+             2
+
+    {:ok, _live, rendered} = live(build_conn(), "/dashboard/obanalyze?search=nothing")
+
+    assert rendered |> :binary.matches("<td class=\"oban-jobs-executing-worker\"") |> length() ==
+             0
+  end
+
   defp job_fixture(args, opts) do
     opts = Keyword.put_new(opts, :worker, "FakeWorker")
     {:ok, job} = Oban.Job.new(args, opts) |> Oban.insert()
