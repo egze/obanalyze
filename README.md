@@ -25,6 +25,9 @@ Update the `live_dashboard` configuration in your router.
 live_dashboard "/dashboard",
   additional_pages: [
     obanalyze: Obanalyze.dashboard()
+  ],
+  on_mount: [
+    Obanalyze.hooks()
   ]
 ```
 
