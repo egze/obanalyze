@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## v1.2.0
+
+* Ability to retry, cancel, delete jobs from the modal.
+
 ## v1.1.1
 
 * Update docs to mention `on_mount` hooks.
