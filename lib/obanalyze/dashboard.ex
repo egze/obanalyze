@@ -4,6 +4,7 @@ defmodule Obanalyze.Dashboard do
   use Phoenix.LiveDashboard.PageBuilder, refresher?: true
 
   import Phoenix.LiveDashboard.Helpers, only: [format_value: 2]
+  import Obanalyze.Helpers
 
   alias Obanalyze.ObanJobs
   alias Obanalyze.NavItem
@@ -43,24 +44,40 @@ defmodule Obanalyze.Dashboard do
     </.live_nav_bar>
 
     <.live_modal :if={@job != nil} id="job-modal" title={"Job - #{@job.id}"} return_to={live_dashboard_path(@socket, @page, params: %{})}>
-      <.label_value_list>
-        <:elem label="ID"><%= @job.id %></:elem>
-        <:elem label="State"><%= @job.state %></:elem>
-        <:elem label="Queue"><%= @job.queue %></:elem>
-        <:elem label="Worker"><%= @job.worker %></:elem>
-        <:elem label="Args"><%= format_value(@job.args, nil) %></:elem>
-        <:elem :if={@job.meta != %{}} label="Meta"><%= format_value(@job.meta, nil) %></:elem>
-        <:elem :if={@job.tags != []} label="Tags"><%= format_value(@job.tags, nil) %></:elem>
-        <:elem :if={@job.errors != []} label="Errors"><%= format_errors(@job.errors) %></:elem>
-        <:elem label="Attempts"><%= @job.attempt %>/<%= @job.max_attempts %></:elem>
-        <:elem label="Priority"><%= @job.priority %></:elem>
-        <:elem label="Attempted at"><%= format_value(@job.attempted_at) %></:elem>
-        <:elem :if={@job.cancelled_at} label="Cancelled at"><%= format_value(@job.cancelled_at) %></:elem>
-        <:elem :if={@job.completed_at} label="Completed at"><%= format_value(@job.completed_at) %></:elem>
-        <:elem :if={@job.discarded_at} label="Discarded at"><%= format_value(@job.discarded_at) %></:elem>
-        <:elem label="Inserted at"><%= format_value(@job.inserted_at) %></:elem>
-        <:elem label="Scheduled at"><%= format_value(@job.scheduled_at) %></:elem>
-      </.label_value_list>
+      <div class="mb-4 btn-toolbar" role="toolbar" aria-label="Oban Job actions">
+        <div :if={can_cancel_job?(@job)} class="btn-group" role="group">
+          <button type="button" class="btn btn-primary btn-sm mr-2" phx-click="cancel_job" phx-value-job={@job.id} data-disable-with="Cancelling...">Cancel</button>
+        </div>
+        <div :if={can_run_job?(@job)} class="btn-group" role="group">
+          <button type="button" class="btn btn-primary btn-sm mr-2" phx-click="retry_job" phx-value-job={@job.id} data-disable-with="Running...">Run now</button>
+        </div>
+        <div :if={can_retry_job?(@job)} class="btn-group" role="group">
+          <button type="button" class="btn btn-primary btn-sm mr-2" phx-click="retry_job" phx-value-job={@job.id} data-disable-with="Retrying...">Retry</button>
+        </div>
+        <div :if={can_delete_job?(@job)} class="btn-group" role="group">
+          <button type="button" class="btn btn-primary btn-sm mr-2" phx-click="delete_job" phx-value-job={@job.id} data-disable-with="Deleting..." data-confirm="Are you sure you want to delete this job?">Delete</button>
+        </div>
+      </div>
+      <div class="tabular-info">
+        <.label_value_list>
+          <:elem label="ID"><%= @job.id %></:elem>
+          <:elem label="State"><%= @job.state %></:elem>
+          <:elem label="Queue"><%= @job.queue %></:elem>
+          <:elem label="Worker"><%= @job.worker %></:elem>
+          <:elem label="Args"><%= format_value(@job.args, nil) %></:elem>
+          <:elem :if={@job.meta != %{}} label="Meta"><%= format_value(@job.meta, nil) %></:elem>
+          <:elem :if={@job.tags != []} label="Tags"><%= format_value(@job.tags, nil) %></:elem>
+          <:elem :if={@job.errors != []} label="Errors"><%= format_errors(@job.errors) %></:elem>
+          <:elem label="Attempts"><%= @job.attempt %>/<%= @job.max_attempts %></:elem>
+          <:elem label="Priority"><%= @job.priority %></:elem>
+          <:elem label="Attempted at"><%= format_value(@job.attempted_at) %></:elem>
+          <:elem :if={@job.cancelled_at} label="Cancelled at"><%= format_value(@job.cancelled_at) %></:elem>
+          <:elem :if={@job.completed_at} label="Completed at"><%= format_value(@job.completed_at) %></:elem>
+          <:elem :if={@job.discarded_at} label="Discarded at"><%= format_value(@job.discarded_at) %></:elem>
+          <:elem label="Inserted at"><%= format_value(@job.inserted_at) %></:elem>
+          <:elem label="Scheduled at"><%= format_value(@job.scheduled_at) %></:elem>
+        </.label_value_list>
+      </div>
     </.live_modal>
     """
   end
@@ -92,6 +109,25 @@ defmodule Obanalyze.Dashboard do
     {:noreply, push_patch(socket, to: to)}
   end
 
+  def handle_event("cancel_job", %{"job" => job_id}, socket) do
+    with {:ok, job} <- ObanJobs.cancel_oban_job(job_id) do
+      {:noreply, assign(socket, job: job)}
+    end
+  end
+
+  def handle_event("retry_job", %{"job" => job_id}, socket) do
+    with {:ok, job} <- ObanJobs.retry_oban_job(job_id) do
+      {:noreply, assign(socket, job: job)}
+    end
+  end
+
+  def handle_event("delete_job", %{"job" => job_id}, socket) do
+    with :ok <- ObanJobs.delete_oban_job(job_id) do
+      to = live_dashboard_path(socket, socket.assigns.page, params: %{})
+      {:noreply, push_patch(socket, to: to)}
+    end
+  end
+
   @impl true
   def handle_refresh(socket) do
     socket =
@@ -107,8 +143,8 @@ defmodule Obanalyze.Dashboard do
 
   defp assign_job(socket, job_id) do
     if job_id do
-      case ObanJobs.get_oban_job(job_id) do
-        %Oban.Job{} = job ->
+      case ObanJobs.fetch_oban_job(job_id) do
+        {:ok, job} ->
           assign(socket, job: job)
 
         _ ->
