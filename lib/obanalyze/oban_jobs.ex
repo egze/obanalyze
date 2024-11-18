@@ -1,8 +1,38 @@
 defmodule Obanalyze.ObanJobs do
-  import Ecto.Query, only: [group_by: 3, order_by: 2, order_by: 3, select: 3, limit: 2, where: 3]
+  import Ecto.Query,
+    only: [from: 2, group_by: 3, order_by: 2, order_by: 3, select: 3, limit: 2, where: 3]
 
-  def get_oban_job(id) do
-    Oban.Repo.get(Oban.config(), Oban.Job, id)
+  def get_oban_job(job_id) do
+    Oban.Repo.get(Oban.config(), Oban.Job, job_id)
+  end
+
+  def fetch_oban_job(job_id) do
+    case get_oban_job(job_id) do
+      %Oban.Job{} = job -> {:ok, job}
+      _ -> {:error, :not_found}
+    end
+  end
+
+  def delete_oban_job(job_id) do
+    query = from(oj in Oban.Job, where: oj.id in [^job_id])
+    Oban.Repo.delete_all(Oban.config(), query)
+    :ok
+  end
+
+  def retry_oban_job(job_id) do
+    with {:ok, job} <- fetch_oban_job(job_id),
+         :ok <- Oban.Engine.retry_job(Oban.config(), job),
+         {:ok, job} <- fetch_oban_job(job_id) do
+      {:ok, job}
+    end
+  end
+
+  def cancel_oban_job(job_id) do
+    with {:ok, job} <- fetch_oban_job(job_id),
+         :ok <- Oban.Engine.cancel_job(Oban.config(), job),
+         {:ok, job} <- fetch_oban_job(job_id) do
+      {:ok, job}
+    end
   end
 
   def list_jobs_with_total(params, job_state) do

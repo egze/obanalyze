@@ -75,6 +75,42 @@ defmodule Obanalyze.DashboardTest do
            |> length() == 0
   end
 
+  test "run now job" do
+    job = job_fixture(%{foo: "bar"}, schedule_in: 1000)
+    {:ok, live, _rendered} = live(build_conn(), "/dashboard/obanalyze?params[job]=#{job.id}")
+
+    assert has_element?(live, "pre", "scheduled")
+    element(live, "button", "Run now") |> render_click()
+    assert has_element?(live, "pre", "available")
+  end
+
+  test "retry job" do
+    job = job_fixture(%{foo: "bar"}, state: "cancelled")
+    {:ok, live, _rendered} = live(build_conn(), "/dashboard/obanalyze?params[job]=#{job.id}")
+
+    assert has_element?(live, "pre", "cancelled")
+    element(live, "button", "Retry") |> render_click()
+    assert has_element?(live, "pre", "available")
+  end
+
+  test "cancel job" do
+    job = job_fixture(%{foo: "bar"}, schedule_in: 1000)
+    {:ok, live, _rendered} = live(build_conn(), "/dashboard/obanalyze?params[job]=#{job.id}")
+
+    assert has_element?(live, "pre", "scheduled")
+    element(live, "button", "Cancel") |> render_click()
+    assert has_element?(live, "pre", "cancelled")
+  end
+
+  test "delete job" do
+    job = job_fixture(%{foo: "bar"}, schedule_in: 1000)
+    {:ok, live, _rendered} = live(build_conn(), "/dashboard/obanalyze?params[job]=#{job.id}")
+
+    assert has_element?(live, "pre", "scheduled")
+    element(live, "button", "Delete") |> render_click()
+    assert_patched(live, "/dashboard/obanalyze?")
+  end
+
   defp job_fixture(args, opts) do
     opts = Keyword.put_new(opts, :worker, "FakeWorker")
     {:ok, job} = Oban.Job.new(args, opts) |> Oban.insert()
