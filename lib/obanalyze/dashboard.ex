@@ -26,7 +26,7 @@ defmodule Obanalyze.Dashboard do
 
     <.live_nav_bar id="oban_states" page={@page} nav_param="job_state" style={:bar} extra_params={["nav"]}>
       <:item :for={nav_item <- @nav_items} name={nav_item.name} label={nav_item.label} method="navigate">
-        <.live_table id="oban_jobs" limit={per_page_limits()} dom_id={"oban-jobs-#{nav_item.name}"} page={@page} row_attrs={&row_attrs/1} row_fetcher={&row_fetcher(&1, &2, nav_item.name)} default_sort_by={@default_sort_by} title="" search={false}>
+        <.live_table id="oban_jobs" limit={per_page_limits()} dom_id={"oban-jobs-#{nav_item.name}"} page={@page} row_attrs={&row_attrs/1} row_fetcher={&row_fetcher(&1, &2, nav_item.name)} default_sort_by={@default_sort_by} title="" search={true}>
           <:col field={:id} sortable={:desc} />
           <:col :let={job} field={:worker} sortable={:desc}>
             <p class="font-weight-bold"><%= job.worker %></p>
