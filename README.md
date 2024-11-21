@@ -2,23 +2,31 @@
 
 <!-- MDOC !-->
 
-Real-time Monitoring for `Oban` with `Phoenix.LiveDashboard`.
+Obanalyze provides real-time monitoring for `Oban` within `Phoenix.LiveDashboard`,
+delivering a user-friendly interface to manage background jobs seamlessly.
 
-## Install
+## Features
+
+- **Job Management**: Retry, cancel, or delete jobs directly from the dashboard.
+- **Filtering**: Filter jobs based on worker name or job arguments to quickly find what you're looking for.
+- **Database Compatibility**: Fully compatible with SQLite, PostgreSQL or any database that Oban uses.
+
+## Installation
 
 The package can be installed by adding `obanalyze` to your list of dependencies in `mix.exs`:
 
 ```elixir
 def deps do
   [
-    {:obanalyze, "~> 1.0"}
+    {:obanalyze, "~> 1.3"}
   ]
 end
 ```
 
-## Configure
+## Configuration
 
-Update the `live_dashboard` configuration in your router.
+Configure your application to include Obanalyze in `Phoenix.LiveDashboard`.
+Update your router configuration as follows:
 
 ```elixir
 # lib/my_app_web/router.ex
@@ -31,14 +39,22 @@ live_dashboard "/dashboard",
   ]
 ```
 
-## Done
+## Usage
 
-Go to your `Phoenix.LiveDashboard` and you should see the `Obanalyze` tab.
+After installation and setup, navigate to your `Phoenix.LiveDashboard` at the specified
+route (e.g., `/dev/dashboard`). You will see the new `Obanalyze` tab, which provides
+a complete overview of your background jobs.
+
+## List view
 
 ![Obanalyze screenshot](doc/images/obanalyze.png "Obanalyze")
+
+## Single job view
+
+![Obanalyze job screenshot](doc/images/obanalyze_job.png "Single Job")
 
 
 # Alternatives
 
-* [evilmarty/oban_live_dashboard](https://github.com/evilmarty/oban_live_dashboard) where I took my inspiration from.
- You should check it out if you want a simple way to observe your Oban jobs.
+- [evilmarty/oban_live_dashboard](https://github.com/evilmarty/oban_live_dashboard): Inspired this project; a simplistic approach to Oban job monitoring.
+- [Oban Web](https://getoban.pro): Official advanced dashboard offering extensive features, directly from the creators of Oban.
