@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## v1.3.1
+
+* Improved README, no new features.
+
 ## v1.3.0
 
 * Add search.
