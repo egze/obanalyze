@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## v1.4.1
+
+* Fix filtering in Postgres for `Smart` engine.
+
 ## v1.4.0
 
 * Fix filtering in Postgres.
