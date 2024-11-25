@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## v1.4.0
+
+* Fix filtering in Postgres.
+
 ## v1.3.1
 
 * Improved README, no new features.
