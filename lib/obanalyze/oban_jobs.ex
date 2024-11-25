@@ -63,7 +63,7 @@ defmodule Obanalyze.ObanJobs do
           where: ilike(oj.worker, ^like),
           or_where: ilike(type(oj.args, :string), ^like)
 
-      %{engine: Oban.Engines.Lite} ->
+      _ ->
         from oj in query,
           where: like(oj.worker, ^like),
           or_where: like(oj.args, ^like)
