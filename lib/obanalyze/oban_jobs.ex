@@ -57,17 +57,19 @@ defmodule Obanalyze.ObanJobs do
   defp filter(query, term) do
     like = "%#{term}%"
 
-    case Oban.config() do
-      %{engine: Oban.Engines.Basic} ->
-        from oj in query,
-          where: ilike(oj.worker, ^like),
-          or_where: ilike(type(oj.args, :string), ^like)
-
-      _ ->
-        from oj in query,
-          where: like(oj.worker, ^like),
-          or_where: like(oj.args, ^like)
+    if postgres?() do
+      from oj in query,
+        where: ilike(oj.worker, ^like),
+        or_where: ilike(type(oj.args, :string), ^like)
+    else
+      from oj in query,
+        where: like(oj.worker, ^like),
+        or_where: like(type(oj.args, :string), ^like)
     end
+  end
+
+  defp postgres? do
+    Oban.config().engine in [Oban.Engines.Basic, Oban.Pro.Engines.Smart]
   end
 
   defp jobs_count_query(job_state) do
