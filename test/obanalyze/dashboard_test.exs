@@ -18,14 +18,10 @@ defmodule Obanalyze.DashboardTest do
   test "shows jobs with limit" do
     for _ <- 1..110, do: job_fixture(%{}, state: "executing", attempted_at: DateTime.utc_now())
     {:ok, live, rendered} = live(build_conn(), "/dashboard/obanalyze")
-
-    assert rendered |> :binary.matches("<td class=\"oban-jobs-executing-worker\"") |> length() ==
-             20
+    assert_count(rendered, "executing", 20)
 
     rendered = render_patch(live, "/dashboard/obanalyze?limit=100")
-
-    assert rendered |> :binary.matches("<td class=\"oban-jobs-executing-worker\"") |> length() ==
-             100
+    assert_count(rendered, "executing", 100)
   end
 
   test "shows job info modal" do
@@ -51,8 +47,7 @@ defmodule Obanalyze.DashboardTest do
     conn = build_conn()
     {:ok, live, rendered} = live(conn, "/dashboard/obanalyze")
 
-    assert rendered |> :binary.matches("<td class=\"oban-jobs-executing-worker\"") |> length() ==
-             1
+    assert_count(rendered, "executing", 1)
 
     {:ok, live, rendered} =
       live
@@ -60,9 +55,7 @@ defmodule Obanalyze.DashboardTest do
       |> render_click()
       |> follow_redirect(conn)
 
-    assert rendered
-           |> :binary.matches("<td class=\"oban-jobs-completed-worker\"")
-           |> length() == 1
+    assert_count(rendered, "completed", 1)
 
     {:ok, _live, rendered} =
       live
@@ -70,9 +63,7 @@ defmodule Obanalyze.DashboardTest do
       |> render_click()
       |> follow_redirect(conn)
 
-    assert rendered
-           |> :binary.matches("<td class=\"oban-jobs-scheduled-worker\"")
-           |> length() == 0
+    assert_count(rendered, "scheduled", 0)
   end
 
   test "run now job" do
@@ -127,24 +118,23 @@ defmodule Obanalyze.DashboardTest do
       )
 
     {:ok, _live, rendered} = live(build_conn(), "/dashboard/obanalyze?search=JsonWorker")
-
-    assert rendered |> :binary.matches("<td class=\"oban-jobs-executing-worker\"") |> length() ==
-             1
+    assert_count(rendered, 1)
 
     {:ok, _live, rendered} = live(build_conn(), "/dashboard/obanalyze?search=YamlWorker")
+    assert_count(rendered, 1)
 
-    assert rendered |> :binary.matches("<td class=\"oban-jobs-executing-worker\"") |> length() ==
-             1
+    {:ok, _live, rendered} = live(build_conn(), "/dashboard/obanalyze?search=yamlworker")
+    assert_count(rendered, 1)
 
     {:ok, _live, rendered} = live(build_conn(), "/dashboard/obanalyze?search=foo")
-
-    assert rendered |> :binary.matches("<td class=\"oban-jobs-executing-worker\"") |> length() ==
-             2
+    assert_count(rendered, 2)
 
     {:ok, _live, rendered} = live(build_conn(), "/dashboard/obanalyze?search=nothing")
+    assert_count(rendered, 0)
+  end
 
-    assert rendered |> :binary.matches("<td class=\"oban-jobs-executing-worker\"") |> length() ==
-             0
+  defp assert_count(rendered, state \\ "executing", n) do
+    assert length(:binary.matches(rendered, "<td class=\"oban-jobs-#{state}-worker\"")) == n
   end
 
   defp job_fixture(args, opts) do
