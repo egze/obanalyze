@@ -2,8 +2,12 @@ defmodule Obanalyze.ObanJobs do
   import Ecto.Query,
     only: [from: 2, group_by: 3, order_by: 2, order_by: 3, select: 3, limit: 2, where: 3]
 
+  @oban_name Application.compile_env(:obanalyze, :oban_name, Oban)
+
+  defp oban_config(), do: Oban.config(@oban_name)
+
   def get_oban_job(job_id) do
-    Oban.Repo.get(Oban.config(), Oban.Job, job_id)
+    Oban.Repo.get(oban_config(), Oban.Job, job_id)
   end
 
   def fetch_oban_job(job_id) do
@@ -15,13 +19,13 @@ defmodule Obanalyze.ObanJobs do
 
   def delete_oban_job(job_id) do
     query = from(oj in Oban.Job, where: oj.id in [^job_id])
-    Oban.Repo.delete_all(Oban.config(), query)
+    Oban.Repo.delete_all(oban_config(), query)
     :ok
   end
 
   def retry_oban_job(job_id) do
     with {:ok, job} <- fetch_oban_job(job_id),
-         :ok <- Oban.Engine.retry_job(Oban.config(), job),
+         :ok <- Oban.Engine.retry_job(oban_config(), job),
          {:ok, job} <- fetch_oban_job(job_id) do
       {:ok, job}
     end
@@ -29,17 +33,17 @@ defmodule Obanalyze.ObanJobs do
 
   def cancel_oban_job(job_id) do
     with {:ok, job} <- fetch_oban_job(job_id),
-         :ok <- Oban.Engine.cancel_job(Oban.config(), job),
+         :ok <- Oban.Engine.cancel_job(oban_config(), job),
          {:ok, job} <- fetch_oban_job(job_id) do
       {:ok, job}
     end
   end
 
   def list_jobs_with_total(params, job_state) do
-    total_jobs = Oban.Repo.aggregate(Oban.config(), jobs_count_query(job_state), :count)
+    total_jobs = Oban.Repo.aggregate(oban_config(), jobs_count_query(job_state), :count)
 
     jobs =
-      Oban.Repo.all(Oban.config(), jobs_query(params, job_state)) |> Enum.map(&Map.from_struct/1)
+      Oban.Repo.all(oban_config(), jobs_query(params, job_state)) |> Enum.map(&Map.from_struct/1)
 
     {jobs, total_jobs}
   end
@@ -69,7 +73,7 @@ defmodule Obanalyze.ObanJobs do
   end
 
   defp postgres? do
-    Oban.config().engine in [Oban.Engines.Basic, Oban.Pro.Engines.Smart]
+    oban_config().engine in [Oban.Engines.Basic, Oban.Pro.Engines.Smart]
   end
 
   defp jobs_count_query(job_state) do
@@ -79,7 +83,7 @@ defmodule Obanalyze.ObanJobs do
 
   def job_states_with_count do
     Oban.Repo.all(
-      Oban.config(),
+      oban_config(),
       Oban.Job
       |> group_by([j], [j.state])
       |> order_by([j], [j.state])
