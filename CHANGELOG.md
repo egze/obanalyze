@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## v1.4.2
+
+* Support custom named Oban instances.
+
 ## v1.4.1
 
 * Fix filtering in Postgres for `Smart` engine.

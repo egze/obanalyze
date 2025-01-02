@@ -18,7 +18,7 @@ The package can be installed by adding `obanalyze` to your list of dependencies 
 ```elixir
 def deps do
   [
-    {:obanalyze, "~> 1.3"}
+    {:obanalyze, "~> 1.4"}
   ]
 end
 ```
